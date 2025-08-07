@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  retrospectives:
+    build: .
+    ports:
+      - "8000:8000"  # Django backend
+      - "3000:3000"  # Vue.js frontend
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=retrospectives.settings
+    restart: unless-stopped
