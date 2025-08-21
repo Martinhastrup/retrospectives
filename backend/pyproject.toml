@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retrospectives"
+version = "0.1.0"
+description = "Retrospectives tool"
+requires-python = ">=3.8"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "retrospectives.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = ["-v", "--tb=short", "--strict-markers"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests", 
+    "slow: Slow running tests"
+]
+django_find_project = false
+testpaths = ["api"]
+norecursedirs = ["myvenv", ".venv", "venv", "__pycache__", ".git"]

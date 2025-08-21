@@ -8,8 +8,8 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'username', 'full_name', 'date_joined']
-        read_only_fields = ['id', 'date_joined']
+        fields = ['id', 'email', 'username', 'userfullname', 'role']
+        read_only_fields = ['id']
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -17,11 +17,17 @@ class UserCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['email', 'username', 'full_name', 'password']
+        fields = ['email', 'username', 'userfullname', 'role', 'password']
     
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'userfullname', 'role']
 
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -78,4 +84,4 @@ class RetrospectiveSerializer(serializers.ModelSerializer):
 class RetrospectiveCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Retrospective
-        fields = ['title', 'description', 'team'] 
+        fields = ['title', 'description', 'team']  # Added 'team' field back 

@@ -9,11 +9,14 @@
         Conduct effective retrospectives to identify what's working, what's not, and how to improve your team's processes and collaboration.
       </p>
       <div class="flex justify-center space-x-4">
-        <router-link to="/retrospectives" class="btn-primary">
-          Start Retrospective
+        <router-link to="/manage-retrospectives" class="btn-primary">
+          Manage Retrospectives
         </router-link>
         <router-link to="/teams" class="btn-secondary">
           Manage Teams
+        </router-link>
+        <router-link to="/users" class="btn-secondary">
+          Manage Users
         </router-link>
       </div>
     </div>

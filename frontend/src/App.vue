@@ -10,7 +10,8 @@
           </div>
           <div class="flex items-center space-x-4">
             <router-link to="/teams" class="text-gray-700 hover:text-primary-600">Teams</router-link>
-            <router-link to="/retrospectives" class="text-gray-700 hover:text-primary-600">Retrospectives</router-link>
+            <router-link to="/users" class="text-gray-700 hover:text-primary-600">Users</router-link>
+            <router-link to="/manage-retrospectives" class="text-gray-700 hover:text-primary-600">Retrospectives</router-link>
             <router-link to="/login" class="btn-primary">Login</router-link>
           </div>
         </div>

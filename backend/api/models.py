@@ -6,10 +6,13 @@ from django.utils import timezone
 class User(AbstractUser):
     """Custom user model for the retrospective tool."""
     email = models.EmailField(unique=True)
-    full_name = models.CharField(max_length=255, blank=True)
+    userfullname = models.CharField(max_length=255, blank=True)
+    username = models.CharField(max_length=150, unique=True)
+    role = models.CharField(max_length=255, blank=True)
     
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    EMAIL_FIELD = 'email'
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email', 'userfullname']
     
     def __str__(self):
         return self.email
@@ -36,8 +39,8 @@ class Retrospective(models.Model):
     
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='retrospectives')
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='retrospectives_created')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='retrospectives', null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='retrospectives_created')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(default=timezone.now)
     completed_at = models.DateTimeField(null=True, blank=True)

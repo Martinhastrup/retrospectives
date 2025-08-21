@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import Team, Retrospective, RetrospectiveItem, ActionItem
 from .serializers import (
-    UserSerializer, UserCreateSerializer, TeamSerializer, TeamCreateSerializer,
+    UserSerializer, UserCreateSerializer, UserUpdateSerializer, TeamSerializer, TeamCreateSerializer,
     RetrospectiveSerializer, RetrospectiveCreateSerializer, RetrospectiveItemSerializer,
     ActionItemSerializer
 )
@@ -15,18 +15,43 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     
     def get_serializer_class(self):
         if self.action == 'create':
             return UserCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return UserUpdateSerializer
         return UserSerializer
+    
+    def create(self, request, *args, **kwargs):
+        print(f"🔍 UserViewSet.create called with data: {request.data}")
+        try:
+            response = super().create(request, *args, **kwargs)
+            # Ensure the response includes all fields from UserSerializer
+            if response.status_code == 201:
+                # Re-serialize the response using UserSerializer to include id field
+                user = User.objects.get(username=request.data['username'])
+                serializer = UserSerializer(user)
+                response.data = serializer.data
+            return response
+        except Exception as e:
+            print(f"❌ Error in UserViewSet.create: {e}")
+            raise
+    
+    def update(self, request, *args, **kwargs):
+        print(f"🔍 UserViewSet.update called with data: {request.data}")
+        try:
+            return super().update(request, *args, **kwargs)
+        except Exception as e:
+            print(f"❌ Error in UserViewSet.update: {e}")
+            raise
 
 
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -67,7 +92,7 @@ class TeamViewSet(viewsets.ModelViewSet):
 class RetrospectiveViewSet(viewsets.ModelViewSet):
     queryset = Retrospective.objects.all()
     serializer_class = RetrospectiveSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -75,7 +100,12 @@ class RetrospectiveViewSet(viewsets.ModelViewSet):
         return RetrospectiveSerializer
     
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        # Handle case where user might not be authenticated
+        if hasattr(self.request, 'user') and self.request.user.is_authenticated:
+            serializer.save(created_by=self.request.user)
+        else:
+            # For development, create without created_by (you can set this later)
+            serializer.save()
     
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
@@ -95,16 +125,21 @@ class RetrospectiveViewSet(viewsets.ModelViewSet):
 class RetrospectiveItemViewSet(viewsets.ModelViewSet):
     queryset = RetrospectiveItem.objects.all()
     serializer_class = RetrospectiveItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        # Handle case where user might not be authenticated
+        if hasattr(self.request, 'user') and self.request.user.is_authenticated:
+            serializer.save(author=self.request.user)
+        else:
+            # For development, create without author (you can set this later)
+            serializer.save()
 
 
 class ActionItemViewSet(viewsets.ModelViewSet):
     queryset = ActionItem.objects.all()
     serializer_class = ActionItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):

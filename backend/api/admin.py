@@ -8,15 +8,15 @@ User = get_user_model()
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ['email', 'username', 'full_name', 'is_active', 'date_joined']
-    search_fields = ['email', 'username', 'full_name']
-    ordering = ['-date_joined']
+    list_display = ['email', 'userfullname', 'role', 'is_active', ]
+    search_fields = ['email', 'userfullname', 'role']
+    ordering = ['-email']
     
     fieldsets = UserAdmin.fieldsets + (
-        ('Additional Info', {'fields': ('full_name',)}),
+        ('Additional Info', {'fields': ('userfullname',)}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ('Additional Info', {'fields': ('full_name',)}),
+        ('Additional Info', {'fields': ('userfullname',)}),
     )
 
 
@@ -30,7 +30,7 @@ class TeamAdmin(admin.ModelAdmin):
 
 @admin.register(Retrospective)
 class RetrospectiveAdmin(admin.ModelAdmin):
-    list_display = ['title', 'team', 'created_by', 'status', 'created_at']
+    list_display = ['title', 'created_by', 'status', 'created_at']
     list_filter = ['status', 'created_at']
     search_fields = ['title', 'description']
     ordering = ['-created_at']

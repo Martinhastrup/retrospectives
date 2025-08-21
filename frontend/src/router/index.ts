@@ -12,12 +12,22 @@ const router = createRouter({
     {
       path: '/teams',
       name: 'teams',
-      component: () => import('@/views/TeamsView.vue')
+      component: () => import('@/views/ManageTeamsView.vue')
     },
     {
-      path: '/retrospectives',
-      name: 'retrospectives',
-      component: () => import('@/views/RetrospectivesView.vue')
+      path: '/create-retrospectives',
+      name: 'create-trospectives',
+      component: () => import('@/views/CreateRetrospectivesView.vue')
+    },
+    {
+      path: '/manage-retrospectives',
+      name: 'manage-trospectives',
+      component: () => import('@/views/ManageRetrospectivesView.vue')
+    },
+    {
+      path: '/users',
+      name: 'users',
+      component: () => import('@/views/CreateUsersView.vue')
     },
     {
       path: '/retrospectives/:id',

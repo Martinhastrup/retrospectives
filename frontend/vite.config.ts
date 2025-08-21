@@ -13,11 +13,14 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
+    watch: {
+      usePolling: true, // Enable polling for Docker
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        // Remove the rewrite - keep the /api prefix
       },
     },
   },
@@ -25,4 +28,16 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
+  // Configure Vite to use a different temp directory
+  cacheDir: '/tmp/vite',
+  // Disable the default cache directory
+  clearScreen: false,
+  // Configure Vite to use a different approach for temporary files
+  optimizeDeps: {
+    force: true
+  },
+  // Disable file system caching for development
+  experimental: {
+    hmrPartialAccept: true
+  }
 }) 

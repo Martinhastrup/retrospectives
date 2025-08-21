@@ -6,7 +6,21 @@ services:
     ports:
       - "8000:8000"  # Django backend
       - "3000:3000"  # Vue.js frontend
+    volumes:
+      # Mount only the source code
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/public:/app/frontend/public
+      - ./frontend/package.json:/app/frontend/package.json
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts
+      - ./backend/api:/app/backend/api
+      - ./backend/retrospectives:/app/backend/retrospectives
+      - ./backend/manage.py:/app/backend/manage.py
+      
+      # NEW: Add persistent data volume
+      - ./data:/app/backend/data
     environment:
-      - DEBUG=1
-      - DJANGO_SETTINGS_MODULE=retrospectives.settings
+      DEBUG: "1"
+      DJANGO_SETTINGS_MODULE: "retrospectives.settings"
+      NODE_ENV: "development"
+      DATABASE_PATH: "/app/backend/data/db.sqlite3"
     restart: unless-stopped

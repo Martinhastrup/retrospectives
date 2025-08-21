@@ -54,7 +54,18 @@ RUN chmod +x /app/start.sh
 # Create a non-root user for security
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app && \
-    chmod -R 755 /app
+    chmod -R 755 /app && \
+    chmod -R 777 /app/frontend && \
+    chmod -R 777 /app/frontend/node_modules && \
+    mkdir -p /tmp/vite && \
+    chown -R appuser:appuser /tmp/vite && \
+    mkdir -p /app/frontend/.vite && \
+    chown -R appuser:appuser /app/frontend/.vite && \
+    chmod -R 777 /app/frontend/.vite && \
+    # Ensure database directory has proper permissions
+    mkdir -p /app/backend && \
+    chmod -R 777 /app/backend && \
+    chown -R appuser:appuser /app/backend
 
 USER appuser
 
