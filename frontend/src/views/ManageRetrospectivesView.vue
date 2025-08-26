@@ -73,6 +73,12 @@
           
           <div class="flex items-center gap-2 ml-4">
             <button 
+              @click="runRetrospective(retrospective)"
+              class="bg-green-100 text-green-700 px-3 py-1 rounded-md hover:bg-green-200 transition-colors text-sm"
+            >
+              {{ getButtonText(retrospective.id) }}
+            </button>
+            <button 
               @click="editRetrospective(retrospective)"
               class="bg-blue-100 text-blue-700 px-3 py-1 rounded-md hover:bg-blue-200 transition-colors text-sm"
             >
@@ -301,6 +307,28 @@ const formatDate = (dateString: string) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// Get button text based on whether retrospective has been started
+const getButtonText = (retrospectiveId: number) => {
+  const hasBeenStarted = localStorage.getItem(`retrospective_${retrospectiveId}_started`)
+  return hasBeenStarted ? 'Continue' : 'Run'
+}
+
+// Run Retrospective function
+const runRetrospective = async (retrospective: Retrospective) => {
+  console.log('🔍 runRetrospective called with retrospective:', retrospective)
+  
+  // Check if this retrospective has been started before (using localStorage)
+  const hasBeenStarted = localStorage.getItem(`retrospective_${retrospective.id}_started`)
+  
+  if (!hasBeenStarted) {
+    // Mark this retrospective as started
+    localStorage.setItem(`retrospective_${retrospective.id}_started`, 'true')
+    console.log('✅ Retrospective marked as started')
+  }
+  
+  router.push(`/run-retrospective/${retrospective.id}`)
 }
 
 // Edit Retrospective function

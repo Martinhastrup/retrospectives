@@ -35,6 +35,11 @@ const router = createRouter({
       component: () => import('@/views/RetrospectiveDetailView.vue')
     },
     {
+      path: '/run-retrospective/:id',
+      name: 'run-retrospective',
+      component: () => import('@/views/RunRetrospectiveView.vue')
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/LoginView.vue')
