@@ -66,12 +66,12 @@
           <div 
             class="retrospective-square good-square" 
             :class="{ 'expanded': expandedSquare === 'good' }"
-            @click.stop="expandSquare('good')"
+            @click.stop="safeExpandSquare('good')"
           >
             <div class="square-header">
-              <div class="square-icon">😊</div>
-              <h3 class="square-title">Good</h3>
-              <p class="square-description">What went well?</p>
+              <span class="square-icon">😊</span>
+              <span class="square-title">Good</span>
+              <span class="square-description">What went well?</span>
             </div>
             <div 
               class="square-content"
@@ -87,6 +87,7 @@
                   :style="{ left: item.x + 'px', top: item.y + 'px' }"
                   @mousedown="startDrag($event, 'good', index)"
                   @click.stop
+                  @dblclick="startEdit('good', index)"
                 >
                   <button 
                     class="delete-postit-btn"
@@ -95,7 +96,19 @@
                   >
                     ×
                   </button>
-                  {{ item.text }}
+                  <div v-if="editingItem && editingItem.squareType === 'good' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
+                    <textarea
+                      v-model="editingText"
+                      class="edit-input"
+                      @blur="finishEdit"
+                      @keyup.ctrl-enter="finishEdit"
+                      @keyup.esc="cancelEdit"
+                      @mousedown.stop
+                      @click.stop
+                      ref="editInput"
+                    ></textarea>
+                  </div>
+                  <div v-else class="postit-text">{{ item.text }}</div>
                 </div>
               </div>
             </div>
@@ -105,12 +118,12 @@
           <div 
             class="retrospective-square bad-square" 
             :class="{ 'expanded': expandedSquare === 'bad' }"
-            @click.stop="expandSquare('bad')"
+            @click.stop="safeExpandSquare('bad')"
           >
             <div class="square-header">
-              <div class="square-icon">😞</div>
-              <h3 class="square-title">Bad</h3>
-              <p class="square-description">What didn't go well?</p>
+              <span class="square-icon">😞</span>
+              <span class="square-title">Bad</span>
+              <span class="square-description">What didn't go well?</span>
             </div>
             <div 
               class="square-content"
@@ -126,6 +139,7 @@
                   :style="{ left: item.x + 'px', top: item.y + 'px' }"
                   @mousedown="startDrag($event, 'bad', index)"
                   @click.stop
+                  @dblclick="startEdit('bad', index)"
                 >
                   <button 
                     class="delete-postit-btn"
@@ -134,7 +148,19 @@
                   >
                     ×
                   </button>
-                  {{ item.text }}
+                  <div v-if="editingItem && editingItem.squareType === 'bad' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
+                    <textarea
+                      v-model="editingText"
+                      class="edit-input"
+                      @blur="finishEdit"
+                      @keyup.ctrl-enter="finishEdit"
+                      @keyup.esc="cancelEdit"
+                      @mousedown.stop
+                      @click.stop
+                      ref="editInput"
+                    ></textarea>
+                  </div>
+                  <div v-else class="postit-text">{{ item.text }}</div>
                 </div>
               </div>
             </div>
@@ -144,12 +170,12 @@
           <div 
             class="retrospective-square start-square" 
             :class="{ 'expanded': expandedSquare === 'start' }"
-            @click.stop="expandSquare('start')"
+            @click.stop="safeExpandSquare('start')"
           >
             <div class="square-header">
-              <div class="square-icon">🚀</div>
-              <h3 class="square-title">Start</h3>
-              <p class="square-description">What should we start doing?</p>
+              <span class="square-icon">🚀</span>
+              <span class="square-title">Start</span>
+              <span class="square-description">What should we start doing?</span>
             </div>
             <div 
               class="square-content"
@@ -165,6 +191,7 @@
                   :style="{ left: item.x + 'px', top: item.y + 'px' }"
                   @mousedown="startDrag($event, 'start', index)"
                   @click.stop
+                  @dblclick="startEdit('start', index)"
                 >
                   <button 
                     class="delete-postit-btn"
@@ -173,7 +200,19 @@
                   >
                     ×
                   </button>
-                  {{ item.text }}
+                  <div v-if="editingItem && editingItem.squareType === 'start' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
+                    <textarea
+                      v-model="editingText"
+                      class="edit-input"
+                      @blur="finishEdit"
+                      @keyup.ctrl-enter="finishEdit"
+                      @keyup.esc="cancelEdit"
+                      @mousedown.stop
+                      @click.stop
+                      ref="editInput"
+                    ></textarea>
+                  </div>
+                  <div v-else class="postit-text">{{ item.text }}</div>
                 </div>
               </div>
             </div>
@@ -183,12 +222,12 @@
           <div 
             class="retrospective-square stop-square" 
             :class="{ 'expanded': expandedSquare === 'stop' }"
-            @click.stop="expandSquare('stop')"
+            @click.stop="safeExpandSquare('stop')"
           >
             <div class="square-header">
-              <div class="square-icon">🛑</div>
-              <h3 class="square-title">Stop</h3>
-              <p class="square-description">What should we stop doing?</p>
+              <span class="square-icon">🛑</span>
+              <span class="square-title">Stop</span>
+              <span class="square-description">What should we stop doing?</span>
             </div>
             <div 
               class="square-content"
@@ -204,6 +243,7 @@
                   :style="{ left: item.x + 'px', top: item.y + 'px' }"
                   @mousedown="startDrag($event, 'stop', index)"
                   @click.stop
+                  @dblclick="startEdit('stop', index)"
                 >
                   <button 
                     class="delete-postit-btn"
@@ -212,7 +252,19 @@
                   >
                     ×
                   </button>
-                  {{ item.text }}
+                  <div v-if="editingItem && editingItem.squareType === 'stop' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
+                    <textarea
+                      v-model="editingText"
+                      class="edit-input"
+                      @blur="finishEdit"
+                      @keyup.ctrl-enter="finishEdit"
+                      @keyup.esc="cancelEdit"
+                      @mousedown.stop
+                      @click.stop
+                      ref="editInput"
+                    ></textarea>
+                  </div>
+                  <div v-else class="postit-text">{{ item.text }}</div>
                 </div>
               </div>
             </div>
@@ -222,12 +274,12 @@
           <div 
             class="retrospective-square actions-square" 
             :class="{ 'expanded': expandedSquare === 'actions' }"
-            @click.stop="expandSquare('actions')"
+            @click.stop="safeExpandSquare('actions')"
           >
             <div class="square-header">
-              <div class="square-icon">✅</div>
-              <h3 class="square-title">Actions</h3>
-              <p class="square-description">What actions will we take?</p>
+              <span class="square-icon">✅</span>
+              <span class="square-title">Actions</span>
+              <span class="square-description">What actions will we take?</span>
             </div>
             <div 
               class="square-content"
@@ -243,6 +295,7 @@
                   :style="{ left: item.x + 'px', top: item.y + 'px' }"
                   @mousedown="startDrag($event, 'actions', index)"
                   @click.stop
+                  @dblclick="startEdit('actions', index)"
                 >
                   <button 
                     class="delete-postit-btn"
@@ -251,7 +304,19 @@
                   >
                     ×
                   </button>
-                  {{ item.text }}
+                  <div v-if="editingItem && editingItem.squareType === 'actions' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
+                    <textarea
+                      v-model="editingText"
+                      class="edit-input"
+                      @blur="finishEdit"
+                      @keyup.ctrl-enter="finishEdit"
+                      @keyup.esc="cancelEdit"
+                      @mousedown.stop
+                      @click.stop
+                      ref="editInput"
+                    ></textarea>
+                  </div>
+                  <div v-else class="postit-text">{{ item.text }}</div>
                 </div>
               </div>
             </div>
@@ -293,7 +358,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -317,6 +382,11 @@ const isDraggingPostIt = ref(false)
 const hasMovedPostIt = ref(false)
 const draggedItem = ref<{ squareType: keyof SquareItems, index: number } | null>(null)
 const dragOffset = ref({ x: 0, y: 0 })
+
+// Editing state
+const editingItem = ref<{ squareType: keyof SquareItems, index: number, currentWidth?: number, currentHeight?: number } | null>(null)
+const editingText = ref('')
+const isFinishingEdit = ref(false)
 
 interface Retrospective {
   id: number
@@ -388,8 +458,8 @@ const formatDate = (dateString: string) => {
 
 // Expand square functionality
 const expandSquare = (squareType: string) => {
-  // Don't expand if we're currently dragging a post-it
-  if (isDraggingPostIt.value) {
+  // Don't expand if we're currently dragging a post-it or editing one
+  if (isDraggingPostIt.value || editingItem.value) {
     return
   }
   
@@ -400,8 +470,22 @@ const expandSquare = (squareType: string) => {
   }
 }
 
+// Safe expand function that checks editing state
+const safeExpandSquare = (squareType: string) => {
+  console.log('safeExpandSquare called for:', squareType, 'editingItem:', editingItem.value, 'isFinishingEdit:', isFinishingEdit.value)
+  if (!editingItem.value && !isFinishingEdit.value) {
+    expandSquare(squareType)
+  } else {
+    console.log('Preventing expansion - currently editing or finishing edit')
+  }
+}
+
 // Handle grid click (click outside to collapse)
 const handleGridClick = () => {
+  // Don't collapse if we're currently editing a post-it
+  if (editingItem.value) {
+    return
+  }
   expandedSquare.value = null
 }
 
@@ -551,9 +635,18 @@ const handleMouseMove = (event: MouseEvent) => {
   const newX = event.clientX - rect.left - dragOffset.value.x
   const newY = event.clientY - rect.top - dragOffset.value.y
   
-  // Keep within bounds
-  const constrainedX = Math.max(0, Math.min(newX, rect.width - 100))
-  const constrainedY = Math.max(0, Math.min(newY, rect.height - 60))
+  // Keep within bounds with 25px margin from edges
+  // Account for the square's padding (1.5rem = 24px) and header height
+  const margin = 25 // 25px margin from edges
+  const padding = 24 // 1.5rem padding
+  const headerHeight = 60 // Approximate header height including margin
+  
+  // Calculate the available content area (excluding padding and header)
+  const contentWidth = rect.width - (padding * 2)
+  const contentHeight = rect.height - padding - headerHeight
+  
+  const constrainedX = Math.max(margin, Math.min(newX, contentWidth - 100 - margin))
+  const constrainedY = Math.max(margin, Math.min(newY, contentHeight - 60 - margin))
   
   // Update the item position directly for immediate response
   const item = squareItems.value[draggedItem.value.squareType][draggedItem.value.index]
@@ -599,6 +692,64 @@ const deletePostIt = (squareType: keyof SquareItems, index: number) => {
 watch([availablePostIts, squareItems], () => {
   savePostItData()
 }, { deep: true })
+
+// Editing functions
+const startEdit = (squareType: keyof SquareItems, index: number) => {
+  console.log('startEdit called for:', squareType, index)
+  editingItem.value = { squareType, index }
+  editingText.value = squareItems.value[squareType][index].text
+  console.log('editingItem set to:', editingItem.value)
+  
+  // Capture the current post-it dimensions before editing
+  const postItElement = document.querySelector(`.${squareType}-square .square-item:nth-child(${index + 1})`) as HTMLElement
+  if (postItElement) {
+    const currentWidth = postItElement.offsetWidth
+    const currentHeight = postItElement.offsetHeight
+    
+    // Store the dimensions in the editing state
+    editingItem.value.currentWidth = currentWidth
+    editingItem.value.currentHeight = currentHeight
+  }
+  
+  // Focus the input on next tick to ensure it's rendered
+  nextTick(() => {
+    const input = document.querySelector('.edit-input') as HTMLInputElement
+    if (input) {
+      input.focus()
+    }
+  })
+}
+
+const finishEdit = () => {
+  console.log('finishEdit called, editingItem:', editingItem.value)
+  if (editingItem.value) {
+    const { squareType, index } = editingItem.value
+    if (editingText.value.trim()) {
+      squareItems.value[squareType][index].text = editingText.value.trim()
+      savePostItData()
+    }
+    
+    // Set flag to prevent expansion during the finishing process
+    isFinishingEdit.value = true
+    
+    // Clear editing state
+    editingItem.value = null
+    editingText.value = ''
+    console.log('editingItem cleared')
+    
+    // Reset flag after a short delay to allow click events to complete
+    setTimeout(() => {
+      isFinishingEdit.value = false
+      console.log('isFinishingEdit reset to false')
+    }, 100)
+  }
+}
+
+const cancelEdit = () => {
+  editingItem.value = null
+  editingText.value = ''
+  isFinishingEdit.value = false
+}
 
 // Load retrospective when component mounts
 onMounted(() => {
@@ -656,7 +807,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
+  border: none;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -689,26 +840,28 @@ onMounted(() => {
 /* Square Header */
 .square-header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: baseline;
   margin-bottom: 1rem;
+  gap: 0.5rem;
+  justify-content: flex-start;
 }
 
-.square-header-top {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
+
 
 .square-icon {
-  font-size: 1.5rem;
-  margin-right: 0.75rem;
+  font-size: 1.25rem;
+  margin-right: 0.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .square-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
+  line-height: 1;
 }
 
 .square-content {
@@ -720,18 +873,18 @@ onMounted(() => {
 }
 
 .square-description {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   opacity: 0.8;
   text-align: left;
   margin: 0;
   font-style: italic;
+  line-height: 1;
 }
 
 /* Good Square - Green and Happy */
 .good-square {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  border-color: #047857;
 }
 
 .good-square:hover {
@@ -742,7 +895,6 @@ onMounted(() => {
 .bad-square {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
-  border-color: #b91c1c;
 }
 
 .bad-square:hover {
@@ -753,7 +905,6 @@ onMounted(() => {
 .start-square {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
-  border-color: #1d4ed8;
 }
 
 .start-square:hover {
@@ -764,7 +915,6 @@ onMounted(() => {
 .stop-square {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
-  border-color: #b45309;
 }
 
 .stop-square:hover {
@@ -775,7 +925,6 @@ onMounted(() => {
 .actions-square {
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
-  border-color: #6d28d9;
   grid-column: 1 / -1;
   min-height: 150px;
 }
@@ -816,6 +965,21 @@ onMounted(() => {
   
   .square-description {
     font-size: 0.875rem;
+  }
+  
+  .square-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .square-icon {
+    font-size: 1.1rem;
+    margin-right: 0;
+  }
+  
+  .square-title {
+    font-size: 1rem;
   }
 }
 
@@ -1023,5 +1187,51 @@ onMounted(() => {
   .post-it-input {
     font-size: 0.75rem;
   }
+}
+
+/* Post-it editing styles */
+.edit-input-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 6px;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.edit-input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #92400e;
+  font-weight: 500;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  line-height: 1.2;
+  overflow: hidden;
+  cursor: text;
+  user-select: text;
+}
+
+.edit-input:focus {
+  border-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+}
+
+.postit-text {
+  word-wrap: break-word;
+  line-height: 1.2;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 </style>
