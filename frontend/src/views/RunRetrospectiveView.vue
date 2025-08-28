@@ -59,300 +59,33 @@
       <!-- Retrospective Steps -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6 text-center">Retrospective</h2>
+        <p class="text-sm text-gray-600 mb-6 text-center">Single click to expand - Double click to create post-it notes</p>
         
         <!-- Retrospective Grid -->
         <div class="retrospective-grid" :class="{ 'expanded': expandedSquare }" @click="handleGridClick">
-          <!-- Good Square -->
-          <div 
-            class="retrospective-square good-square" 
-            :class="{ 'expanded': expandedSquare === 'good' }"
-            @click.stop="safeExpandSquare('good')"
-          >
-            <div class="square-header">
-              <span class="square-icon">😊</span>
-              <span class="square-title">Good</span>
-              <span class="square-description">What went well?</span>
-            </div>
-            <div 
-              class="square-content"
-              @dragover="handleDragOver"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, 'good')"
-            >
-              <div class="square-items-container">
-                <div 
-                  v-for="(item, index) in squareItems.good" 
-                  :key="item.id"
-                  class="square-item draggable-postit"
-                  :style="{ left: item.x + 'px', top: item.y + 'px' }"
-                  @mousedown="startDrag($event, 'good', index)"
-                  @click.stop
-                  @dblclick="startEdit('good', index)"
-                >
-                  <button 
-                    class="delete-postit-btn"
-                    @click.stop="deletePostIt('good', index)"
-                    title="Delete post-it"
-                  >
-                    ×
-                  </button>
-                  <div v-if="editingItem && editingItem.squareType === 'good' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
-                    <textarea
-                      v-model="editingText"
-                      class="edit-input"
-                      @blur="finishEdit"
-                      @keyup.ctrl-enter="finishEdit"
-                      @keyup.esc="cancelEdit"
-                      @mousedown.stop
-                      @click.stop
-                      ref="editInput"
-                    ></textarea>
-                  </div>
-                  <div v-else class="postit-text">{{ item.text }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bad Square -->
-          <div 
-            class="retrospective-square bad-square" 
-            :class="{ 'expanded': expandedSquare === 'bad' }"
-            @click.stop="safeExpandSquare('bad')"
-          >
-            <div class="square-header">
-              <span class="square-icon">😞</span>
-              <span class="square-title">Bad</span>
-              <span class="square-description">What didn't go well?</span>
-            </div>
-            <div 
-              class="square-content"
-              @dragover="handleDragOver"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, 'bad')"
-            >
-              <div class="square-items-container">
-                <div 
-                  v-for="(item, index) in squareItems.bad" 
-                  :key="item.id"
-                  class="square-item draggable-postit"
-                  :style="{ left: item.x + 'px', top: item.y + 'px' }"
-                  @mousedown="startDrag($event, 'bad', index)"
-                  @click.stop
-                  @dblclick="startEdit('bad', index)"
-                >
-                  <button 
-                    class="delete-postit-btn"
-                    @click.stop="deletePostIt('bad', index)"
-                    title="Delete post-it"
-                  >
-                    ×
-                  </button>
-                  <div v-if="editingItem && editingItem.squareType === 'bad' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
-                    <textarea
-                      v-model="editingText"
-                      class="edit-input"
-                      @blur="finishEdit"
-                      @keyup.ctrl-enter="finishEdit"
-                      @keyup.esc="cancelEdit"
-                      @mousedown.stop
-                      @click.stop
-                      ref="editInput"
-                    ></textarea>
-                  </div>
-                  <div v-else class="postit-text">{{ item.text }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Start Square -->
-          <div 
-            class="retrospective-square start-square" 
-            :class="{ 'expanded': expandedSquare === 'start' }"
-            @click.stop="safeExpandSquare('start')"
-          >
-            <div class="square-header">
-              <span class="square-icon">🚀</span>
-              <span class="square-title">Start</span>
-              <span class="square-description">What should we start doing?</span>
-            </div>
-            <div 
-              class="square-content"
-              @dragover="handleDragOver"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, 'start')"
-            >
-              <div class="square-items-container">
-                <div 
-                  v-for="(item, index) in squareItems.start" 
-                  :key="item.id"
-                  class="square-item draggable-postit"
-                  :style="{ left: item.x + 'px', top: item.y + 'px' }"
-                  @mousedown="startDrag($event, 'start', index)"
-                  @click.stop
-                  @dblclick="startEdit('start', index)"
-                >
-                  <button 
-                    class="delete-postit-btn"
-                    @click.stop="deletePostIt('start', index)"
-                    title="Delete post-it"
-                  >
-                    ×
-                  </button>
-                  <div v-if="editingItem && editingItem.squareType === 'start' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
-                    <textarea
-                      v-model="editingText"
-                      class="edit-input"
-                      @blur="finishEdit"
-                      @keyup.ctrl-enter="finishEdit"
-                      @keyup.esc="cancelEdit"
-                      @mousedown.stop
-                      @click.stop
-                      ref="editInput"
-                    ></textarea>
-                  </div>
-                  <div v-else class="postit-text">{{ item.text }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stop Square -->
-          <div 
-            class="retrospective-square stop-square" 
-            :class="{ 'expanded': expandedSquare === 'stop' }"
-            @click.stop="safeExpandSquare('stop')"
-          >
-            <div class="square-header">
-              <span class="square-icon">🛑</span>
-              <span class="square-title">Stop</span>
-              <span class="square-description">What should we stop doing?</span>
-            </div>
-            <div 
-              class="square-content"
-              @dragover="handleDragOver"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, 'stop')"
-            >
-              <div class="square-items-container">
-                <div 
-                  v-for="(item, index) in squareItems.stop" 
-                  :key="item.id"
-                  class="square-item draggable-postit"
-                  :style="{ left: item.x + 'px', top: item.y + 'px' }"
-                  @mousedown="startDrag($event, 'stop', index)"
-                  @click.stop
-                  @dblclick="startEdit('stop', index)"
-                >
-                  <button 
-                    class="delete-postit-btn"
-                    @click.stop="deletePostIt('stop', index)"
-                    title="Delete post-it"
-                  >
-                    ×
-                  </button>
-                  <div v-if="editingItem && editingItem.squareType === 'stop' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
-                    <textarea
-                      v-model="editingText"
-                      class="edit-input"
-                      @blur="finishEdit"
-                      @keyup.ctrl-enter="finishEdit"
-                      @keyup.esc="cancelEdit"
-                      @mousedown.stop
-                      @click.stop
-                      ref="editInput"
-                    ></textarea>
-                  </div>
-                  <div v-else class="postit-text">{{ item.text }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Actions Square -->
-          <div 
-            class="retrospective-square actions-square" 
-            :class="{ 'expanded': expandedSquare === 'actions' }"
-            @click.stop="safeExpandSquare('actions')"
-          >
-            <div class="square-header">
-              <span class="square-icon">✅</span>
-              <span class="square-title">Actions</span>
-              <span class="square-description">What actions will we take?</span>
-            </div>
-            <div 
-              class="square-content"
-              @dragover="handleDragOver"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, 'actions')"
-            >
-              <div class="square-items-container">
-                <div 
-                  v-for="(item, index) in squareItems.actions" 
-                  :key="item.id"
-                  class="square-item draggable-postit"
-                  :style="{ left: item.x + 'px', top: item.y + 'px' }"
-                  @mousedown="startDrag($event, 'actions', index)"
-                  @click.stop
-                  @dblclick="startEdit('actions', index)"
-                >
-                  <button 
-                    class="delete-postit-btn"
-                    @click.stop="deletePostIt('actions', index)"
-                    title="Delete post-it"
-                  >
-                    ×
-                  </button>
-                  <div v-if="editingItem && editingItem.squareType === 'actions' && editingItem.index === index" class="edit-input-container" :style="{ width: editingItem.currentWidth + 'px', height: editingItem.currentHeight + 'px' }">
-                    <textarea
-                      v-model="editingText"
-                      class="edit-input"
-                      @blur="finishEdit"
-                      @keyup.ctrl-enter="finishEdit"
-                      @keyup.esc="cancelEdit"
-                      @mousedown.stop
-                      @click.stop
-                      ref="editInput"
-                    ></textarea>
-                  </div>
-                  <div v-else class="postit-text">{{ item.text }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <RetrospectiveSquare
+            v-for="squareType in (['good', 'bad', 'start', 'stop', 'actions'] as const)"
+            :key="squareType"
+            :square-type="squareType"
+            :items="squareItems[squareType]"
+            :is-expanded="expandedSquare === squareType"
+            :editing-item="editingItem"
+            v-model:editing-text="editingText"
+            @expand="safeExpandSquare"
+            @dragover="handleDragOver"
+            @dragleave="handleDragLeave"
+            @drop="handleDrop"
+            @start-drag="startDrag"
+            @start-edit="startEdit"
+            @delete-post-it="deletePostIt"
+            @finish-edit="finishEdit"
+            @cancel-edit="cancelEdit"
+            @create-post-it="createPostIt"
+          />
         </div>
       </div>
 
-      <!-- Post-it Notes Section -->
-      <div class="post-it-section">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">Add Items</h3>
-        <div class="post-it-container">
-          <div 
-            v-for="(postIt, index) in availablePostIts" 
-            :key="index"
-            class="post-it-note"
-            :draggable="true"
-            @dragstart="handleDragStart($event, index)"
-            @dragend="handleDragEnd"
-          >
-            <div class="post-it-content">
-              <input 
-                v-model="postIt.text"
-                placeholder="Enter text..."
-                class="post-it-input"
-                @click.stop
-              />
-            </div>
-          </div>
-          <button 
-            @click="addNewPostIt"
-            class="add-post-it-btn"
-          >
-            + Add Post-it
-          </button>
-        </div>
-      </div>
+
     </div>
   </div>
 </template>
@@ -361,6 +94,14 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import RetrospectiveSquare from '@/components/RetrospectiveSquare.vue'
+
+// Declare global property for drag state
+declare global {
+  interface Window {
+    isDraggingPostIt?: boolean
+  }
+}
 
 const route = useRoute()
 
@@ -369,7 +110,6 @@ const retrospective = ref<Retrospective | null>(null)
 const isLoading = ref(true)
 const error = ref('')
 const expandedSquare = ref<string | null>(null)
-const availablePostIts = ref<PostIt[]>([])
 const squareItems = ref<SquareItems>({
   good: [],
   bad: [],
@@ -377,9 +117,6 @@ const squareItems = ref<SquareItems>({
   stop: [],
   actions: []
 })
-const draggedPostItIndex = ref<number | null>(null)
-const isDraggingPostIt = ref(false)
-const hasMovedPostIt = ref(false)
 const draggedItem = ref<{ squareType: keyof SquareItems, index: number } | null>(null)
 const dragOffset = ref({ x: 0, y: 0 })
 
@@ -410,6 +147,8 @@ interface PostIt {
   id: string
   x?: number
   y?: number
+  originalX?: number
+  originalY?: number
 }
 
 interface SquareItems {
@@ -458,8 +197,8 @@ const formatDate = (dateString: string) => {
 
 // Expand square functionality
 const expandSquare = (squareType: string) => {
-  // Don't expand if we're currently dragging a post-it or editing one
-  if (isDraggingPostIt.value || editingItem.value) {
+  // Don't expand if we're currently editing one
+  if (editingItem.value) {
     return
   }
   
@@ -489,15 +228,7 @@ const handleGridClick = () => {
   expandedSquare.value = null
 }
 
-// Post-it functionality
-const addNewPostIt = () => {
-  const newPostIt: PostIt = {
-    text: '',
-    id: Date.now().toString()
-  }
-  availablePostIts.value.push(newPostIt)
-  savePostItData()
-}
+
 
 // Storage key for this retrospective
 const getStorageKey = () => {
@@ -508,7 +239,6 @@ const getStorageKey = () => {
 // Save post-it data to localStorage
 const savePostItData = () => {
   const data = {
-    availablePostIts: availablePostIts.value,
     squareItems: squareItems.value
   }
   localStorage.setItem(getStorageKey(), JSON.stringify(data))
@@ -520,7 +250,6 @@ const loadPostItData = () => {
     const savedData = localStorage.getItem(getStorageKey())
     if (savedData) {
       const data = JSON.parse(savedData)
-      availablePostIts.value = data.availablePostIts || []
       squareItems.value = data.squareItems || {
         good: [],
         bad: [],
@@ -534,24 +263,9 @@ const loadPostItData = () => {
   }
 }
 
-// Drag and drop functionality
-const handleDragStart = (event: DragEvent, index: number) => {
-  draggedPostItIndex.value = index
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', index.toString())
-  }
-}
-
-const handleDragEnd = () => {
-  draggedPostItIndex.value = null
-}
-
+// Drag and drop functionality (simplified - only for moving post-its within squares)
 const handleDragOver = (event: DragEvent) => {
   event.preventDefault()
-  if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = 'move'
-  }
   // Add visual feedback
   const target = event.currentTarget as HTMLElement
   target.classList.add('drag-over')
@@ -568,32 +282,6 @@ const handleDrop = (event: DragEvent, squareType: keyof SquareItems) => {
   // Remove visual feedback
   const target = event.currentTarget as HTMLElement
   target.classList.remove('drag-over')
-  
-  if (draggedPostItIndex.value !== null) {
-    const postIt = availablePostIts.value[draggedPostItIndex.value]
-    
-    // Only add if the post-it has text
-    if (postIt.text.trim()) {
-      // Create a new post-it for the square with random position
-      const newItem: PostIt = {
-        text: postIt.text,
-        id: Date.now().toString(),
-        x: Math.random() * 200 + 20, // Random position between 20-220px
-        y: Math.random() * 100 + 20  // Random position between 20-120px
-      }
-      
-      // Add to the square
-      squareItems.value[squareType].push(newItem)
-      
-      // Remove from available post-its
-      availablePostIts.value.splice(draggedPostItIndex.value, 1)
-      
-      // Save the changes
-      savePostItData()
-    }
-  }
-  
-  draggedPostItIndex.value = null
 }
 
 // Post-it dragging within squares
@@ -601,8 +289,9 @@ const startDrag = (event: MouseEvent, squareType: keyof SquareItems, index: numb
   event.preventDefault()
   event.stopPropagation()
   
-  isDraggingPostIt.value = true
-  hasMovedPostIt.value = false
+  // Set global drag flag
+  window.isDraggingPostIt = true
+  
   draggedItem.value = { squareType, index }
   
   const squareElement = document.querySelector(`.${squareType}-square`) as HTMLElement
@@ -622,9 +311,7 @@ const startDrag = (event: MouseEvent, squareType: keyof SquareItems, index: numb
 }
 
 const handleMouseMove = (event: MouseEvent) => {
-  if (!isDraggingPostIt.value || !draggedItem.value) return
-  
-  hasMovedPostIt.value = true
+  if (!draggedItem.value) return
   
   const squareElement = document.querySelector(`.${draggedItem.value.squareType}-square`) as HTMLElement
   if (!squareElement) return
@@ -645,8 +332,13 @@ const handleMouseMove = (event: MouseEvent) => {
   const contentWidth = rect.width - (padding * 2)
   const contentHeight = rect.height - padding - headerHeight
   
-  const constrainedX = Math.max(margin, Math.min(newX, contentWidth - 100 - margin))
-  const constrainedY = Math.max(margin, Math.min(newY, contentHeight - 60 - margin))
+  // Check if the square is expanded to determine post-it size constraints
+  const isExpanded = expandedSquare.value === draggedItem.value.squareType
+  const postItWidth = isExpanded ? 100 : 60
+  const postItHeight = isExpanded ? 60 : 40
+  
+  const constrainedX = Math.max(margin, Math.min(newX, contentWidth - postItWidth - margin))
+  const constrainedY = Math.max(margin, Math.min(newY, contentHeight - postItHeight - margin))
   
   // Update the item position directly for immediate response
   const item = squareItems.value[draggedItem.value.squareType][draggedItem.value.index]
@@ -663,24 +355,27 @@ const handleMouseMove = (event: MouseEvent) => {
 }
 
 const handleMouseUp = (event: MouseEvent) => {
-  if (isDraggingPostIt.value) {
+  if (draggedItem.value) {
     if (event) {
       event.preventDefault()
       event.stopPropagation()
     }
     
-    if (hasMovedPostIt.value) {
-      savePostItData()
-    }
+    // Save the changes
+    savePostItData()
     
     // Clear dragging state
-    isDraggingPostIt.value = false
     draggedItem.value = null
   }
+  
+  // Clear global drag flag
+  window.isDraggingPostIt = false
   
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
 }
+
+
 
 // Delete post-it function
 const deletePostIt = (squareType: keyof SquareItems, index: number) => {
@@ -689,8 +384,24 @@ const deletePostIt = (squareType: keyof SquareItems, index: number) => {
 }
 
 // Watch for changes in post-it data and save automatically
-watch([availablePostIts, squareItems], () => {
+watch([squareItems], () => {
   savePostItData()
+}, { deep: true })
+
+// Additional safeguard: ensure editing dimensions are preserved
+watch(editingItem, (newValue) => {
+  if (newValue && newValue.currentWidth && newValue.currentHeight) {
+    // Force the dimensions to be preserved
+    nextTick(() => {
+      const container = document.querySelector('.edit-input-container') as HTMLElement
+      if (container) {
+        container.style.width = newValue.currentWidth + 'px'
+        container.style.height = newValue.currentHeight + 'px'
+        container.style.setProperty('--postit-width', newValue.currentWidth + 'px')
+        container.style.setProperty('--postit-height', newValue.currentHeight + 'px')
+      }
+    })
+  }
 }, { deep: true })
 
 // Editing functions
@@ -701,14 +412,22 @@ const startEdit = (squareType: keyof SquareItems, index: number) => {
   console.log('editingItem set to:', editingItem.value)
   
   // Capture the current post-it dimensions before editing
-  const postItElement = document.querySelector(`.${squareType}-square .square-item:nth-child(${index + 1})`) as HTMLElement
+  // Use data attributes for reliable element selection
+  const postItElement = document.querySelector(`[data-square-type="${squareType}"][data-item-index="${index}"]`) as HTMLElement
   if (postItElement) {
     const currentWidth = postItElement.offsetWidth
     const currentHeight = postItElement.offsetHeight
     
-    // Store the dimensions in the editing state
-    editingItem.value.currentWidth = currentWidth
-    editingItem.value.currentHeight = currentHeight
+    // Store the dimensions in the editing state with fallback values
+    editingItem.value.currentWidth = Math.max(currentWidth, 100)
+    editingItem.value.currentHeight = Math.max(currentHeight, 60)
+    
+    console.log('Captured dimensions:', { width: currentWidth, height: currentHeight, stored: { width: editingItem.value.currentWidth, height: editingItem.value.currentHeight } })
+  } else {
+    // Fallback dimensions if element not found
+    editingItem.value.currentWidth = 100
+    editingItem.value.currentHeight = 60
+    console.log('Using fallback dimensions:', { width: 100, height: 60 })
   }
   
   // Focus the input on next tick to ensure it's rendered
@@ -749,6 +468,47 @@ const cancelEdit = () => {
   editingItem.value = null
   editingText.value = ''
   isFinishingEdit.value = false
+}
+
+// Create new post-it in a specific square
+const createPostIt = (squareType: keyof SquareItems, event: MouseEvent) => {
+  // Get the position relative to the square
+  const squareElement = event.currentTarget as HTMLElement
+  const rect = squareElement.getBoundingClientRect()
+  
+  // Check if the square is expanded to determine post-it size
+  const isExpanded = expandedSquare.value === squareType
+  const postItWidth = isExpanded ? 100 : 60
+  const postItHeight = isExpanded ? 60 : 40
+  
+  const x = event.clientX - rect.left - (postItWidth / 2) // Center the post-it on the click
+  const y = event.clientY - rect.top - (postItHeight / 2)
+  
+  // Create a new post-it
+  const newItem: PostIt = {
+    text: '',
+    id: Date.now().toString(),
+    x: Math.max(20, Math.min(x, rect.width - postItWidth - 20)), // Keep within bounds
+    y: Math.max(20, Math.min(y, rect.height - postItHeight - 20))
+  }
+  
+  // Add to the square
+  squareItems.value[squareType].push(newItem)
+  
+  // Start editing immediately
+  editingItem.value = { squareType, index: squareItems.value[squareType].length - 1 }
+  editingText.value = ''
+  
+  // Save the changes
+  savePostItData()
+  
+  // Focus the input on next tick
+  nextTick(() => {
+    const input = document.querySelector('.edit-input') as HTMLInputElement
+    if (input) {
+      input.focus()
+    }
+  })
 }
 
 // Load retrospective when component mounts
@@ -1045,6 +805,14 @@ onMounted(() => {
   transition: none;
 }
 
+/* Ensure post-it items maintain size during editing */
+.square-item:has(.edit-input-container) {
+  width: auto !important;
+  height: auto !important;
+  min-width: 100px;
+  min-height: 60px;
+}
+
 /* Delete button */
 .delete-postit-btn {
   position: absolute;
@@ -1199,6 +967,14 @@ onMounted(() => {
   border-radius: 6px;
   padding: 0.5rem;
   box-sizing: border-box;
+  min-width: 100px;
+  min-height: 60px;
+  resize: none;
+  overflow: hidden;
+  width: var(--postit-width, 100px) !important;
+  height: var(--postit-height, 60px) !important;
+  max-width: var(--postit-width, 100px) !important;
+  max-height: var(--postit-height, 60px) !important;
 }
 
 .edit-input {
@@ -1220,11 +996,22 @@ onMounted(() => {
   overflow: hidden;
   cursor: text;
   user-select: text;
+  min-width: 100px;
+  min-height: 60px;
 }
 
 .edit-input:focus {
   border-color: #d97706;
   box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+}
+
+/* Prevent text selection from affecting size */
+.edit-input::selection {
+  background-color: rgba(217, 119, 6, 0.3);
+}
+
+.edit-input::-moz-selection {
+  background-color: rgba(217, 119, 6, 0.3);
 }
 
 .postit-text {
