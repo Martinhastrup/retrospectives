@@ -1,6 +1,16 @@
 version: '3.8'
 
 services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    restart: unless-stopped
+
   retrospectives:
     build: .
     ports:
@@ -23,4 +33,10 @@ services:
       DJANGO_SETTINGS_MODULE: "retrospectives.settings"
       NODE_ENV: "development"
       DATABASE_PATH: "/app/backend/data/db.sqlite3"
+      OLLAMA_HOST: "ollama:11434"  # Use the ollama service
+    depends_on:
+      - ollama
     restart: unless-stopped
+
+volumes:
+  ollama_data:

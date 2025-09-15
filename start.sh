@@ -8,12 +8,12 @@ source /opt/venv/bin/activate
 python manage.py migrate
 
 # Ensure database file has proper permissions after creation
-if [ -f "db.sqlite3" ]; then
-    chmod 666 db.sqlite3
-    chown appuser:appuser db.sqlite3
+if [ -f "data/db.sqlite3" ]; then
+    chmod 666 data/db.sqlite3
+    chown appuser:appuser data/db.sqlite3
 fi
 
-python manage.py runserver 0.0.0.0:8000 &
+python manage.py runserver 0.0.0.0:8000 --noreload &
 
 # Start the frontend (Vite dev server for hot reloading)
 cd /app/frontend

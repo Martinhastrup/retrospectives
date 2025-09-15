@@ -50,7 +50,7 @@ class RetrospectiveItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = RetrospectiveItem
-        fields = ['id', 'retrospective', 'category', 'content', 'author', 'created_at']
+        fields = ['id', 'retrospective', 'category', 'content', 'author', 'x_minimized', 'y_minimized', 'x_maximized', 'y_maximized', 'created_at']
         read_only_fields = ['id', 'author', 'created_at']
 
 

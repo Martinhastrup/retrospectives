@@ -304,3 +304,115 @@ class TestUserViewSet:
 
         # Cleanup step
         delete_user(User.objects.filter(id=user_id))
+
+
+@pytest.mark.django_db
+class TestRetrospectiveViewSet:
+    """Test cases for the RetrospectiveViewSet."""
+
+    def test_generate_action_items_success(self, api_client):
+        """Test successful generation of action items using AI."""
+        from api.models import Retrospective, RetrospectiveItem, Team
+        User = get_user_model()
+        
+        # Create test data
+        team = Team.objects.create(name="Test Team", description="Test team for AI testing")
+        user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            userfullname='Test User',
+            password='testpass123'
+        )
+        retrospective = Retrospective.objects.create(
+            title="Test Retrospective",
+            description="Test retrospective for AI testing",
+            team=team,
+            created_by=user
+        )
+        
+        # Add some retrospective items
+        RetrospectiveItem.objects.create(
+            retrospective=retrospective,
+            category='start',
+            content='We should start doing daily standups',
+            author=user
+        )
+        RetrospectiveItem.objects.create(
+            retrospective=retrospective,
+            category='stop',
+            content='We should stop having meetings without agendas',
+            author=user
+        )
+        RetrospectiveItem.objects.create(
+            retrospective=retrospective,
+            category='god',
+            content='Our code review process is working well',
+            author=user
+        )
+        
+        try:
+            # Test the generate_action_items endpoint
+            url = reverse('retrospective-generate-action-items', kwargs={'pk': retrospective.pk})
+            response = api_client.post(url)
+            
+            # Note: This test will fail if Ollama is not running or accessible
+            # In a real test environment, you might want to mock the AI service
+            if response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
+                pytest.skip("Ollama service not available for testing")
+            
+            assert response.status_code == status.HTTP_201_CREATED
+            assert 'action_items' in response.data
+            assert 'message' in response.data
+            assert len(response.data['action_items']) > 0
+            
+            # Verify action items were created in database
+            action_items = retrospective.action_items.all()
+            assert action_items.count() > 0
+            
+        finally:
+            # Cleanup
+            retrospective.delete()
+            team.delete()
+            user.delete()
+
+    def test_generate_action_items_no_items(self, api_client):
+        """Test generating action items when retrospective has no items."""
+        from api.models import Retrospective, Team
+        User = get_user_model()
+        
+        # Create test data
+        team = Team.objects.create(name="Test Team", description="Test team for AI testing")
+        user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            userfullname='Test User',
+            password='testpass123'
+        )
+        retrospective = Retrospective.objects.create(
+            title="Empty Retrospective",
+            description="Retrospective with no items",
+            team=team,
+            created_by=user
+        )
+        
+        try:
+            # Test the generate_action_items endpoint
+            url = reverse('retrospective-generate-action-items', kwargs={'pk': retrospective.pk})
+            response = api_client.post(url)
+            
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            assert 'error' in response.data
+            assert 'No retrospective items found' in response.data['error']
+            
+        finally:
+            # Cleanup
+            retrospective.delete()
+            team.delete()
+            user.delete()
+
+    def test_generate_action_items_nonexistent_retrospective(self, api_client):
+        """Test generating action items for a retrospective that doesn't exist."""
+        url = reverse('retrospective-generate-action-items', kwargs={'pk': 99999})
+        response = api_client.post(url)
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND

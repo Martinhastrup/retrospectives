@@ -17,6 +17,6 @@ markers = [
     "integration: Integration tests", 
     "slow: Slow running tests"
 ]
-django_find_project = false
+django_find_project = true
 testpaths = ["api"]
 norecursedirs = ["myvenv", ".venv", "venv", "__pycache__", ".git"]

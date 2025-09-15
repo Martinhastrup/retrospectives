@@ -8,6 +8,7 @@ from .serializers import (
     RetrospectiveSerializer, RetrospectiveCreateSerializer, RetrospectiveItemSerializer,
     ActionItemSerializer
 )
+from .services.generate_actionitems import GenAIService
 
 User = get_user_model()
 
@@ -120,6 +121,52 @@ class RetrospectiveViewSet(viewsets.ModelViewSet):
         retrospective.status = 'archived'
         retrospective.save()
         return Response({'message': 'Retrospective archived'})
+    
+    @action(detail=True, methods=['post'])
+    def generate_action_items(self, request, pk=None):
+        """Generate action items using AI based on retrospective items."""
+        retrospective = self.get_object()
+        
+        # Check if retrospective has items
+        if not retrospective.items.exists():
+            return Response(
+                {'error': 'No retrospective items found. Please add some items before generating action items.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Initialize GenAI service
+            genai_service = GenAIService()
+            
+            # Get the user who initiated the request (if authenticated)
+            user = request.user if hasattr(request, 'user') and request.user.is_authenticated else None
+            
+            # Generate and create retrospective items (which will include action items)
+            created_items = genai_service.create_retrospective_items_from_ai(
+                retrospective_id=retrospective.id
+            )
+            
+            # Filter for action items only
+            action_items = [item for item in created_items if item.category == 'actions']
+            
+            # Serialize the created action items
+            serializer = RetrospectiveItemSerializer(action_items, many=True)
+            
+            return Response({
+                'message': f'Successfully generated {len(action_items)} action items',
+                'action_items': serializer.data
+            }, status=status.HTTP_201_CREATED)
+            
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to generate action items: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class RetrospectiveItemViewSet(viewsets.ModelViewSet):

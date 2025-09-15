@@ -24,7 +24,7 @@
                   :class="{ 'small-mode': !isExpanded }"
                   :data-square-type="squareType"
                   :data-item-index="index"
-                  :style="{ left: item.x + 'px', top: item.y + 'px' }"
+                  :style="{ left: (isExpanded ? item.x_maximized : item.x_minimized) + 'px', top: (isExpanded ? item.y_maximized : item.y_minimized) + 'px' }"
                   @mousedown="$emit('startDrag', $event, squareType, index)"
                   @click.stop
                   @dblclick.stop="handlePostItDoubleClick($event, squareType, index)"
@@ -65,7 +65,7 @@
                     ></textarea>
                   </div>
                   <div v-else class="postit-text">
-                    {{ !isExpanded && item.text.length > 4 ? item.text.substring(0, 4) + '...' : item.text }}
+                    {{ !isExpanded && item.text.length > 30 ? item.text.substring(0, 30) + '...' : item.text }}
                   </div>
                 </div>
               </div>
@@ -75,6 +75,13 @@
 
 <script setup lang="ts">
 import { computed, watch, onUnmounted } from 'vue'
+import { scaleToMaximized, scaleToMinimized } from '@/utils/scaling'
+import {
+  smallPostItWidth,
+  smallPostItHeight,
+  expandedPostItWidth,
+  expandedPostItHeight
+} from '@/utils/config'
 
 // Declare global property for drag state
 declare global {
@@ -86,10 +93,10 @@ declare global {
 interface PostIt {
   text: string
   id: string
-  x?: number
-  y?: number
-  originalX?: number
-  originalY?: number
+  x_minimized?: number
+  y_minimized?: number
+  x_maximized?: number
+  y_maximized?: number
 }
 
 interface EditingItem {
@@ -169,6 +176,11 @@ let editingFinishTimeout: number | null = null
 
 // Handle single click with delay to distinguish from double-click
 const handleSquareClick = () => {
+  console.log(`[${props.squareType}] handleSquareClick called`)
+  console.log(`[${props.squareType}] window.isDraggingPostIt:`, window.isDraggingPostIt)
+  console.log(`[${props.squareType}] props.editingItem:`, props.editingItem)
+  console.log(`[${props.squareType}] justFinishedEditing:`, justFinishedEditing)
+  
   // Check if we're currently in a drag operation by looking at the global state
   if (window.isDraggingPostIt) {
     console.log(`[${props.squareType}] Click blocked: dragging post-it`)
@@ -213,18 +225,25 @@ const handleSquareClick = () => {
 
 // Handle clicks on square content area
 const handleSquareContentClick = (event: MouseEvent) => {
+  console.log(`[${props.squareType}] handleSquareContentClick called`)
+  console.log(`[${props.squareType}] props.editingItem:`, props.editingItem)
+  
   // If we're editing, don't let clicks bubble up to the square container
   if (props.editingItem && props.editingItem.squareType === props.squareType) {
+    console.log(`[${props.squareType}] Content click blocked: currently editing`)
     event.stopPropagation()
     return
   }
   
+  console.log(`[${props.squareType}] Content click allowed: letting it bubble up`)
   // If we're not editing, let the click bubble up normally
   // This allows the square container click handler to work
 }
 
 // Handle double-click on post-it to edit
 const handlePostItDoubleClick = (event: MouseEvent, squareType: string, index: number) => {
+  console.log(`[${props.squareType}] handlePostItDoubleClick called for index ${index}`)
+  
   // Clear any pending single click on the square
   if (clickTimeout) {
     clearTimeout(clickTimeout)
@@ -238,6 +257,8 @@ const handlePostItDoubleClick = (event: MouseEvent, squareType: string, index: n
 
 // Handle double-click on empty space to create new post-it
 const handleSquareDoubleClick = (event: MouseEvent) => {
+  console.log(`[${props.squareType}] handleSquareDoubleClick called`)
+  
   // Clear any pending single click
   if (clickTimeout) {
     clearTimeout(clickTimeout)
@@ -248,12 +269,17 @@ const handleSquareDoubleClick = (event: MouseEvent) => {
   // Only create if we're not clicking on an existing post-it
   const target = event.target as HTMLElement
   if (!target.closest('.square-item')) {
+    console.log(`[${props.squareType}] Creating new post-it`)
     emit('createPostIt', props.squareType, event)
+  } else {
+    console.log(`[${props.squareType}] Double-click on existing post-it, not creating new one`)
   }
 }
 
 // Debug logging for editing state
 watch(() => props.editingItem, (newValue) => {
+  console.log(`[${props.squareType}] editingItem changed:`, newValue)
+  
   if (newValue && newValue.squareType === props.squareType) {
     console.log(`[${props.squareType}] Editing item:`, newValue)
     console.log(`[${props.squareType}] Dimensions:`, { 
@@ -268,7 +294,7 @@ watch(() => props.editingItem, (newValue) => {
       editingFinishTimeout = null
     }
     console.log(`[${props.squareType}] Started editing, cleared justFinishedEditing flag`)
-  } else if (!newValue && props.squareType === props.squareType) {
+  } else if (!newValue) {
     // Editing finished - set flag to prevent immediate expansion
     justFinishedEditing = true
     
@@ -288,88 +314,33 @@ watch(() => props.editingItem, (newValue) => {
   }
 }, { deep: true })
 
-// Watch for square expansion state changes to reposition post-its
+
+
+// Watch for square expansion state changes to scale coordinates
 watch(() => props.isExpanded, (isExpanded) => {
-  if (isExpanded) {
-    // Square is expanding - restore positions from when it was last expanded
-    restoreExpandedPositions()
-  } else {
-    // Square is minimizing - save current expanded positions and reposition for small view
-    saveCurrentPositionsAndReposition()
-  }
-})
-
-// Reposition post-its when square size changes
-const saveCurrentPositionsAndReposition = () => {
+  console.log(`[RetrospectiveSquare] Square ${props.squareType} isExpanded changed to: ${isExpanded}`)
+  
   props.items.forEach((item, index) => {
-    // Save current expanded position as the position to restore to
-    item.originalX = item.x || 0
-    item.originalY = item.y || 0
-    
-    // Calculate new position for small view
-    const smallSquareWidth = 300 // Approximate small square width
-    const smallSquareHeight = 200 // Approximate small square height
-    const postItWidth = 60 // Small mode post-it width
-    const postItHeight = 40 // Small mode post-it height
-    const margin = 20
-    
-    // Get the expanded square dimensions (approximate)
-    const expandedSquareWidth = 800
-    const expandedSquareHeight = 600
-    
-    // Calculate available space for post-its in both modes
-    const expandedAvailableWidth = expandedSquareWidth - 100 - margin * 2
-    const expandedAvailableHeight = expandedSquareHeight - 60 - margin * 2
-    const smallAvailableWidth = smallSquareWidth - postItWidth - margin * 2
-    const smallAvailableHeight = smallSquareHeight - postItHeight - margin * 2
-    
-    // Calculate scaling factors
-    const scaleX = smallAvailableWidth / expandedAvailableWidth
-    const scaleY = smallAvailableHeight / expandedAvailableHeight
-    
-    // Apply scaling and ensure within bounds
-    const newX = Math.max(margin, Math.min(
-      (item.x || 0) * scaleX + margin,
-      smallSquareWidth - postItWidth - margin
-    ))
-    
-    // For Y position, use more aggressive scaling to ensure visibility
-    let newY = (item.y || 0) * scaleY + margin
-    
-    // Ensure the post-it is fully visible within the small square
-    newY = Math.max(margin, Math.min(newY, smallSquareHeight - postItHeight - margin))
-    
-    // If the post-it would still be partially hidden, move it up further
-    if (newY + postItHeight > smallSquareHeight - margin) {
-      newY = smallSquareHeight - postItHeight - margin
-    }
-    
-    // Additional aggressive check: if post-it is in the bottom third of expanded view, force it higher
-    const expandedY = item.y || 0
-    const expandedBottomThird = expandedAvailableHeight * 0.67 // Bottom third threshold
-    if (expandedY > expandedBottomThird) {
-      // Force post-its from bottom third to be in the middle-upper area of small square
-      newY = margin + (smallAvailableHeight * 0.3) + Math.random() * (smallAvailableHeight * 0.4)
-      newY = Math.max(margin, Math.min(newY, smallSquareHeight - postItHeight - margin))
-    }
-    
-    // Update position
-    item.x = newX
-    item.y = newY
-    
-    // Debug logging
-    console.log(`[${props.squareType}] Post-it ${index}: expanded(${item.originalX}, ${item.originalY}) -> small(${newX}, ${newY})`)
-  })
-}
-
-const restoreExpandedPositions = () => {
-  props.items.forEach((item) => {
-    if (item.originalX !== undefined && item.originalY !== undefined) {
-      item.x = item.originalX
-      item.y = item.originalY
+    if (isExpanded) {
+      // Square is expanding - scale minimized coordinates to maximized
+      // Use reasonable maximized dimensions instead of full viewport
+      const maximizedWidth = 1200
+      const maximizedHeight = 800
+      if (item.x_minimized !== undefined && item.y_minimized !== undefined) {
+        const scaled = scaleToMaximized(item.x_minimized, item.y_minimized)
+        item.x_maximized = scaled.x
+        item.y_maximized = scaled.y
+      }
+    } else {
+      // Square is minimizing - scale maximized coordinates to minimized
+      if (item.x_maximized !== undefined && item.y_maximized !== undefined) {
+        const scaled = scaleToMinimized(item.x_maximized, item.y_maximized)
+        item.x_minimized = scaled.x
+        item.y_minimized = scaled.y
+      }
     }
   })
-}
+})
 
 // Cleanup function to clear timeouts when component unmounts
 onUnmounted(() => {
@@ -462,7 +433,7 @@ onUnmounted(() => {
   width: 60px;
   min-height: 40px;
   padding: 0.25rem;
-  font-size: 0.75rem;
+  font-size: 0.6rem;
   transform: rotate(-0.5deg) scale(0.8);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -581,11 +552,10 @@ onUnmounted(() => {
 
 /* Small mode text styling */
 .square-item.small-mode .postit-text {
+  word-wrap: break-word;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.7rem;
-  line-height: 1.1;
+  font-size: 0.5rem;
+  line-height: 1.0;
 }
 
 /* Additional safeguards for editing container */

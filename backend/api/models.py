@@ -54,14 +54,19 @@ class RetrospectiveItem(models.Model):
     CATEGORY_CHOICES = [
         ('start', 'Start'),
         ('stop', 'Stop'),
-        ('continue', 'Continue'),
-        ('kudos', 'Kudos'),
+        ('god', 'God'),
+        ('bad', 'Bad'),
+        ('actions', 'Actions'),
     ]
     
     retrospective = models.ForeignKey(Retrospective, on_delete=models.CASCADE, related_name='items')
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    x_minimized = models.IntegerField(default=0, help_text="X coordinate for minimized square")
+    y_minimized = models.IntegerField(default=0, help_text="Y coordinate for minimized square")
+    x_maximized = models.IntegerField(default=0, help_text="X coordinate for maximized square")
+    y_maximized = models.IntegerField(default=0, help_text="Y coordinate for maximized square")
     created_at = models.DateTimeField(default=timezone.now)
     
     def __str__(self):

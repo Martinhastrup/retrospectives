@@ -61,6 +61,23 @@
         <h2 class="text-xl font-semibold text-gray-900 mb-6 text-center">Retrospective</h2>
         <p class="text-sm text-gray-600 mb-6 text-center">Single click to expand - Double click to create post-it notes</p>
         
+        <!-- Generate Actions Button -->
+        <div class="generate-actions-section mb-6">
+          <button 
+            @click="generateActions"
+            :disabled="isGeneratingActions"
+            class="generate-actions-btn"
+            :class="{ 'generating': isGeneratingActions }"
+          >
+            <span v-if="isGeneratingActions" class="spinner"></span>
+            <span v-else>🤖</span>
+            {{ isGeneratingActions ? 'Generating Actions...' : 'Generate Actions' }}
+          </button>
+          <p class="generate-actions-description">
+            Use AI to generate action items based on your retrospective feedback
+          </p>
+        </div>
+
         <!-- Retrospective Grid -->
         <div class="retrospective-grid" :class="{ 'expanded': expandedSquare }" @click="handleGridClick">
           <RetrospectiveSquare
@@ -95,6 +112,16 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import RetrospectiveSquare from '@/components/RetrospectiveSquare.vue'
+import { scaleToMaximized, scaleToMinimized } from '@/utils/scaling'
+import {
+  margin,
+  padding,
+  headerHeight,
+  smallPostItWidth,
+  smallPostItHeight,
+  expandedPostItWidth,
+  expandedPostItHeight
+} from '@/utils/config'
 
 // Declare global property for drag state
 declare global {
@@ -119,6 +146,7 @@ const squareItems = ref<SquareItems>({
 })
 const draggedItem = ref<{ squareType: keyof SquareItems, index: number } | null>(null)
 const dragOffset = ref({ x: 0, y: 0 })
+const isGeneratingActions = ref(false)
 
 // Editing state
 const editingItem = ref<{ squareType: keyof SquareItems, index: number, currentWidth?: number, currentHeight?: number } | null>(null)
@@ -145,10 +173,10 @@ interface User {
 interface PostIt {
   text: string
   id: string
-  x?: number
-  y?: number
-  originalX?: number
-  originalY?: number
+  x_minimized?: number
+  y_minimized?: number
+  x_maximized?: number
+  y_maximized?: number
 }
 
 interface SquareItems {
@@ -173,6 +201,56 @@ const fetchRetrospective = async () => {
     
     retrospective.value = response.data
     console.log('Retrospective set to:', retrospective.value)
+    
+    // Check if we have localStorage data first
+    const savedData = localStorage.getItem(getStorageKey())
+    if (savedData) {
+      console.log('Found localStorage data, using that instead of API data')
+      // Use localStorage data if available
+      const data = JSON.parse(savedData)
+      squareItems.value = data.squareItems || {
+        good: [],
+        bad: [],
+        start: [],
+        stop: [],
+        actions: []
+      }
+    } else {
+      console.log('No localStorage data found, using API data')
+      // Only use API data if no localStorage data exists
+      if (retrospective.value && retrospective.value.items) {
+        console.log('Processing retrospective items:', retrospective.value.items)
+        
+        // Initialize squareItems with empty arrays
+        const newSquareItems: SquareItems = {
+          good: [],
+          bad: [],
+          start: [],
+          stop: [],
+          actions: []
+        }
+        
+        // Convert API items to PostIt format
+        retrospective.value.items.forEach((item: any) => {
+          const postIt: PostIt = {
+            text: item.content,
+            id: item.id.toString(),
+            x_minimized: item.x_minimized || 0,
+            y_minimized: item.y_minimized || 0,
+            x_maximized: item.x_maximized || 0,
+            y_maximized: item.y_maximized || 0
+          }
+          
+          // Add to appropriate square based on category
+          if (item.category in newSquareItems) {
+            newSquareItems[item.category as keyof SquareItems].push(postIt)
+          }
+        })
+        
+        squareItems.value = newSquareItems
+        console.log('Processed squareItems:', squareItems.value)
+      }
+    }
   } catch (err: any) {
     console.error('Error fetching retrospective:', err)
     console.error('Error response:', err.response)
@@ -284,6 +362,8 @@ const handleDrop = (event: DragEvent, squareType: keyof SquareItems) => {
   target.classList.remove('drag-over')
 }
 
+
+
 // Post-it dragging within squares
 const startDrag = (event: MouseEvent, squareType: keyof SquareItems, index: number) => {
   event.preventDefault()
@@ -301,9 +381,10 @@ const startDrag = (event: MouseEvent, squareType: keyof SquareItems, index: numb
   const item = squareItems.value[squareType][index]
   
   // Calculate offset from mouse to post-it's current position
+  const isExpanded = expandedSquare.value === squareType
   dragOffset.value = {
-    x: event.clientX - squareRect.left - (item.x || 0),
-    y: event.clientY - squareRect.top - (item.y || 0)
+    x: event.clientX - squareRect.left - (isExpanded ? (item.x_maximized || 0) : (item.x_minimized || 0)),
+    y: event.clientY - squareRect.top - (isExpanded ? (item.y_maximized || 0) : (item.y_minimized || 0))
   }
   
   document.addEventListener('mousemove', handleMouseMove)
@@ -322,11 +403,9 @@ const handleMouseMove = (event: MouseEvent) => {
   const newX = event.clientX - rect.left - dragOffset.value.x
   const newY = event.clientY - rect.top - dragOffset.value.y
   
-  // Keep within bounds with 25px margin from edges
+  // Keep within bounds with 5px margin from edges
   // Account for the square's padding (1.5rem = 24px) and header height
-  const margin = 25 // 25px margin from edges
-  const padding = 24 // 1.5rem padding
-  const headerHeight = 60 // Approximate header height including margin
+  // Use global configuration values
   
   // Calculate the available content area (excluding padding and header)
   const contentWidth = rect.width - (padding * 2)
@@ -334,8 +413,8 @@ const handleMouseMove = (event: MouseEvent) => {
   
   // Check if the square is expanded to determine post-it size constraints
   const isExpanded = expandedSquare.value === draggedItem.value.squareType
-  const postItWidth = isExpanded ? 100 : 60
-  const postItHeight = isExpanded ? 60 : 40
+  const postItWidth = isExpanded ? expandedPostItWidth : smallPostItWidth
+  const postItHeight = isExpanded ? expandedPostItHeight : smallPostItHeight
   
   const constrainedX = Math.max(margin, Math.min(newX, contentWidth - postItWidth - margin))
   const constrainedY = Math.max(margin, Math.min(newY, contentHeight - postItHeight - margin))
@@ -343,9 +422,22 @@ const handleMouseMove = (event: MouseEvent) => {
   // Update the item position directly for immediate response
   const item = squareItems.value[draggedItem.value.squareType][draggedItem.value.index]
   if (item) {
-    // Direct assignment for immediate update
-    item.x = constrainedX
-    item.y = constrainedY
+    // Update the appropriate coordinate fields based on square state
+    if (isExpanded) {
+      item.x_maximized = constrainedX
+      item.y_maximized = constrainedY
+      // Also update minimized coordinates to maintain relative positioning
+      const scaled = scaleToMinimized(constrainedX, constrainedY)
+      item.x_minimized = scaled.x
+      item.y_minimized = scaled.y
+    } else {
+      item.x_minimized = constrainedX
+      item.y_minimized = constrainedY
+      // Also update maximized coordinates to maintain relative positioning
+      const scaled = scaleToMaximized(constrainedX, constrainedY)
+      item.x_maximized = scaled.x
+      item.y_maximized = scaled.y
+    }
   }
   
   // Force immediate DOM update
@@ -355,6 +447,7 @@ const handleMouseMove = (event: MouseEvent) => {
 }
 
 const handleMouseUp = (event: MouseEvent) => {
+  
   if (draggedItem.value) {
     if (event) {
       event.preventDefault()
@@ -368,8 +461,10 @@ const handleMouseUp = (event: MouseEvent) => {
     draggedItem.value = null
   }
   
-  // Clear global drag flag
-  window.isDraggingPostIt = false
+  // Clear global drag flag with a small delay to prevent race conditions with click events
+  setTimeout(() => {
+    window.isDraggingPostIt = false
+  }, 50) // 50ms delay to allow click events to be processed first
   
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
@@ -406,10 +501,8 @@ watch(editingItem, (newValue) => {
 
 // Editing functions
 const startEdit = (squareType: keyof SquareItems, index: number) => {
-  console.log('startEdit called for:', squareType, index)
   editingItem.value = { squareType, index }
   editingText.value = squareItems.value[squareType][index].text
-  console.log('editingItem set to:', editingItem.value)
   
   // Capture the current post-it dimensions before editing
   // Use data attributes for reliable element selection
@@ -422,12 +515,10 @@ const startEdit = (squareType: keyof SquareItems, index: number) => {
     editingItem.value.currentWidth = Math.max(currentWidth, 100)
     editingItem.value.currentHeight = Math.max(currentHeight, 60)
     
-    console.log('Captured dimensions:', { width: currentWidth, height: currentHeight, stored: { width: editingItem.value.currentWidth, height: editingItem.value.currentHeight } })
   } else {
     // Fallback dimensions if element not found
     editingItem.value.currentWidth = 100
     editingItem.value.currentHeight = 60
-    console.log('Using fallback dimensions:', { width: 100, height: 60 })
   }
   
   // Focus the input on next tick to ensure it's rendered
@@ -440,7 +531,6 @@ const startEdit = (squareType: keyof SquareItems, index: number) => {
 }
 
 const finishEdit = () => {
-  console.log('finishEdit called, editingItem:', editingItem.value)
   if (editingItem.value) {
     const { squareType, index } = editingItem.value
     if (editingText.value.trim()) {
@@ -454,12 +544,10 @@ const finishEdit = () => {
     // Clear editing state
     editingItem.value = null
     editingText.value = ''
-    console.log('editingItem cleared')
     
     // Reset flag after a short delay to allow click events to complete
     setTimeout(() => {
       isFinishingEdit.value = false
-      console.log('isFinishingEdit reset to false')
     }, 100)
   }
 }
@@ -478,8 +566,8 @@ const createPostIt = (squareType: keyof SquareItems, event: MouseEvent) => {
   
   // Check if the square is expanded to determine post-it size
   const isExpanded = expandedSquare.value === squareType
-  const postItWidth = isExpanded ? 100 : 60
-  const postItHeight = isExpanded ? 60 : 40
+  const postItWidth = isExpanded ? expandedPostItWidth : smallPostItWidth
+  const postItHeight = isExpanded ? expandedPostItHeight : smallPostItHeight
   
   const x = event.clientX - rect.left - (postItWidth / 2) // Center the post-it on the click
   const y = event.clientY - rect.top - (postItHeight / 2)
@@ -488,8 +576,10 @@ const createPostIt = (squareType: keyof SquareItems, event: MouseEvent) => {
   const newItem: PostIt = {
     text: '',
     id: Date.now().toString(),
-    x: Math.max(20, Math.min(x, rect.width - postItWidth - 20)), // Keep within bounds
-    y: Math.max(20, Math.min(y, rect.height - postItHeight - 20))
+    x_minimized: Math.max(20, Math.min(x, rect.width - postItWidth - 20)), // Keep within bounds
+    y_minimized: Math.max(20, Math.min(y, rect.height - postItHeight - 20)),
+    x_maximized: Math.max(20, Math.min(x, rect.width - postItWidth - 20)), // Same position for now
+    y_maximized: Math.max(20, Math.min(y, rect.height - postItHeight - 20))
   }
   
   // Add to the square
@@ -511,10 +601,51 @@ const createPostIt = (squareType: keyof SquareItems, event: MouseEvent) => {
   })
 }
 
+// Generate Actions function
+const generateActions = async () => {
+  if (!retrospective.value) return
+  
+  try {
+    isGeneratingActions.value = true
+    error.value = ''
+    
+    console.log('Generating actions for retrospective:', retrospective.value.id)
+    
+    const response = await axios.post(`/api/retrospectives/${retrospective.value.id}/generate_action_items/`)
+    console.log('Generate actions response:', response)
+    
+    if (response.data && response.data.action_items) {
+      // Convert API response to PostIt format and add to actions square
+      const newActionItems = response.data.action_items.map((item: any) => ({
+        text: item.content,
+        id: item.id.toString(),
+        x_minimized: item.x_minimized || 20, // Use backend position or default
+        y_minimized: item.y_minimized || 20,
+        x_maximized: item.x_maximized || 20,
+        y_maximized: item.y_maximized || 20
+      }))
+      
+      // Add new action items to the actions square
+      squareItems.value.actions.push(...newActionItems)
+      
+      // Save the updated data
+      savePostItData()
+      
+      console.log(`Successfully added ${newActionItems.length} action items`)
+    }
+    
+  } catch (err: any) {
+    console.error('Error generating actions:', err)
+    console.error('Error response:', err.response)
+    error.value = err.response?.data?.error || 'Failed to generate actions. Please try again.'
+  } finally {
+    isGeneratingActions.value = false
+  }
+}
+
 // Load retrospective when component mounts
 onMounted(() => {
   fetchRetrospective()
-  loadPostItData()
 })
 </script>
 
@@ -1020,5 +1151,59 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* Generate Actions Button Styles */
+.generate-actions-section {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.generate-actions-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px rgba(139, 92, 246, 0.3);
+}
+
+.generate-actions-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(139, 92, 246, 0.4);
+}
+
+.generate-actions-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.generate-actions-btn.generating {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+.generate-actions-description {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 </style>

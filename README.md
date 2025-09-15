@@ -50,6 +50,15 @@ npm install
 npm run dev
 ```
 
+### GenAI Setup
+# In case Ollama is already running, kill it and start:
+```bash
+lsof -ti :11434
+kill $(lsof -ti :11434)
+ollama serve
+```
+
+
 ## Development
 
 This project uses:
