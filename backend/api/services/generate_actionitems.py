@@ -1,48 +1,20 @@
 import json
 import logging
 import os
-from typing import List, Dict, Any, TypedDict
+from typing import List
 from ollama import Client
-from pydantic import BaseModel
-from api.models import Retrospective, RetrospectiveItem, ActionItem, User
+from api.models import Retrospective, RetrospectiveItem, User
+from api.schemas import RetroItem, RetroItemList, SYSTEM_PROMPT_GENERATE_ACTIONS, DEFAULT_OLLAMA_HOST, DEFAULT_AI_MODEL
 
 logger = logging.getLogger(__name__)
-
-SYSTEM_PROMPT = '''
-You are a team leader for an agile retrospective.
-Based on cards created by the team, provide actionable insights to improve the team's performance.
-
-Rules:
-- Read the retro items provided.
-- RetroItem is a TypedDict defined as:
-class RetroItem(TypedDict):
-    content: str
-    category: str
-- category is always: 'actions'
-- Output only valid JSON: a list of RetroItems.
-- Output in the same language as the retro items.
-- Group similar items together into a single item.
-- Items MUST be based on the retro items provided.
-- Limit output to maximum 7 items, but fewer are ok.
-- Produce a list of new RetroItems.
-- It should be possible to parse the output using json.loads(response.message.content)
-'''
-
-class RetroItem(BaseModel):
-    content: str
-    category: str
-
-
-class RetroItemList(BaseModel):
-  retro_items: list[RetroItem]
 
 
 class GenAIService:
     """Service for generating action items using AI."""
     
-    def __init__(self, model: str = 'mistral', ollama_host: str = None):
+    def __init__(self, model: str = DEFAULT_AI_MODEL, ollama_host: str = None):
         self.model = model
-        self.ollama_host = ollama_host or os.environ.get('OLLAMA_HOST', '127.0.0.1:11434')
+        self.ollama_host = ollama_host or os.environ.get('OLLAMA_HOST', DEFAULT_OLLAMA_HOST)
     
     def get_retrospective_items(self, retrospective_id: int) -> List[RetroItem]:
         """Get all items from a retrospective."""
@@ -91,7 +63,7 @@ class GenAIService:
                 response = client.chat(
                     model=self.model,
                     messages=[
-                        {'role': 'system', 'content': SYSTEM_PROMPT},
+                        {'role': 'system', 'content': SYSTEM_PROMPT_GENERATE_ACTIONS},
                         {'role': 'user', 'content': user_prompt}
                     ],
                     format=RetroItemList.model_json_schema(),

@@ -63,6 +63,7 @@ class RetrospectiveItem(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    cluster_id = models.IntegerField(default=0, help_text="Cluster ID")
     x_minimized = models.IntegerField(default=0, help_text="X coordinate for minimized square")
     y_minimized = models.IntegerField(default=0, help_text="Y coordinate for minimized square")
     x_maximized = models.IntegerField(default=0, help_text="X coordinate for maximized square")

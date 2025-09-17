@@ -19,23 +19,9 @@ from ollama import chat
 from ollama import ChatResponse
 from typing import TypedDict
 from api.models import Retrospective
+from api.schemas import SYSTEM_PROMPT_GENERATE_ACTIONS
 
 # RETROSPECTIVE_TITLE = "Mushroom Kingdom Retro #1"
-
-SYSTEM_PROMPT = '''
-You are a team leader for an agile retrospective.
-Based on cards created by the team, provide actionable insights to improve the team's performance.
-
-Rules:
-- Read the retro items provided.
-- Produce a list of new RetroItems.
-- RetroItem is a TypedDict defined as:
-class RetroItem(TypedDict):
-    content: str
-    category: str
-- category is always: 'actions'
-- Output only valid JSON: a list of RetroItems.
-'''
 
 class RetroItem(TypedDict):
     content: str
@@ -53,7 +39,7 @@ def get_action_items(retrospective_title: str) -> list[RetroItem]:
   response: ChatResponse = chat(model='mistral', messages=[
     {
       'role': 'system',
-      'content': SYSTEM_PROMPT,
+      'content': SYSTEM_PROMPT_GENERATE_ACTIONS,
     },
     {
         "role": "user",
